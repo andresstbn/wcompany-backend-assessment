@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:14
+    volumes:
+      - ./local_postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    
+    ports:
+      - '5433:5432' # I have occupied 5432 port on my local machine
+     
+    healthcheck:
+      test: "pg_isready --username=postgres && psql --username=postgres --list"
+      timeout: 1s
+      retries: 3
+
+
+  web:
+    build:
+      context: ./
+    command: sh -c "fastapi dev ridehailing/main.py --port 8000 --host 0.0.0.0"
+
+    volumes:
+      - ./:/src
+    environment:
+      ENV: DEVELOPMENT
+      DATABASE_URL: ${DATABASE_URL}
+      WPI_PUBLIC_KEY: ${WPI_PUBLIC_KEY}
+      WPI_PRIVATE_KEY: ${WPI_PRIVATE_KEY}
+      WPI_API_URL: ${WPI_API_URL}
+
+    ports:
+      - '8000:8000'
+    depends_on:
+      - db
